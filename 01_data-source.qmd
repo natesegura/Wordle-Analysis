@@ -1,0 +1,40 @@
+---
+title: "Final Project Data Source"
+author: "Nate Segura"
+format: html
+editor: visual
+df-print: paged
+self-contained: true
+---
+
+```{r}
+#| label: "Load Packages"
+#| message: false
+#| warning: false
+
+library(tidyverse)
+```
+
+## Data
+
+```{r}
+answers_raw <- read_csv("data/wordle_answers_raw.csv")
+
+answers_raw
+```
+
+## Data File Source
+
+This dataset comes from the online puzzle tool "WordFinder" published by "YourDictionary", a brand owned by the digital media company "LoveToKnow Media". The updated data can be found here: <https://wordfinder.yourdictionary.com/wordle/answers/>.
+
+This dataset is a simple list of every wordle puzzle answer since the game became public on June 19th, 2021.
+
+## Data Collection Process
+
+To obtain this data I used webscraping with rvest to extract tables from the webpage. This step of the process was more complex than I had expected. I ran into an issue where the column headers were different than the website showed, and the "date" column did not contain the year for any of the entries. After doing some research I came to understand that the webpage was being dynamically generated, which requires the usage of rvest's `read_html_live()` function. I intially had used `read_html()`, which gathered the static tables instead. After changing this function my data finally reflected the webpage and was ready for further wrangling.
+
+## Initial Format & Unit of Analysis
+
+Since this data was organized as tables on the webpage, after scraping I already a dataframe. Each data frame was for a specific month so I used the `bind_rows()` function to combine all into one large frame.
+
+After binding, each row represents a different daily puzzle. The dataset has three columns: Date, Puzzle Number, and Puzzle Answer. There are 1,755 rows, representing almost five years of Wordle puzzles.
