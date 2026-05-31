@@ -1,0 +1,196 @@
+---
+title: "Wordle Word Tester"
+subtitle: "DSCI 250 - Final Project: Shiny App"
+author: "Nate Segura"
+format: html
+server: shiny
+self-contained: true
+---
+
+```{r}
+#| context: setup
+#| include: false
+
+library(tidyverse)
+library(lubridate)
+library(shiny)
+library(quarto)
+library(ggrepel)
+```
+
+```{r}
+#| context: setup
+#| message: false
+
+answers <- read_csv("data/wordle_answers_raw.csv")
+
+answers1 <- answers |> 
+  rename(puzzle_num = "Wordle Puzzle",    # Change Column Names
+         answer = "Wordle Answer") |> 
+  filter(puzzle_num != 1755) |>         # Remove Latest Answer (formatted differently)
+  mutate(year = year(mdy(Date)),
+         month = month(mdy(Date)),    # Seperate Date into ymd columns for easier managing
+         day = day(mdy(Date)))
+
+
+wordrankings <- read_csv("data/ranked_words.csv")
+
+wordrankings2 <- wordrankings |>
+  rename(guess = X1) |> 
+  mutate(greenrank = paste0("#", min_rank(-totalgreen)),
+         yellowrank = paste0("#", min_rank(-totalyellow)))
+```
+
+```{r}
+#| context: setup
+
+check_green <- function(df, word) {
+  
+  df |> 
+    mutate(g1 = if_else(str_sub(answer, 1, 1) == str_sub(word, 1, 1), 1, 0),
+           g2 = if_else(str_sub(answer, 2, 2) == str_sub(word, 2, 2), 1, 0),
+           g3 = if_else(str_sub(answer, 3, 3) == str_sub(word, 3, 3), 1, 0),
+           g4 = if_else(str_sub(answer, 4, 4) == str_sub(word, 4, 4), 1, 0),
+           g5 = if_else(str_sub(answer, 5, 5) == str_sub(word, 5, 5), 1, 0)) |> 
+    mutate(greens = rowSums(across(7:11)))
+  
+}
+
+yellow_formula <- function(answer, word) {
+  
+  p_letters <- paste0(unlist(str_split(word, "")), "{1}")
+  
+  remaining <- 
+    str_remove(
+      str_remove(
+        str_remove(
+          str_remove(
+            str_remove(
+              answer, p_letters[1]), p_letters[2]), p_letters[3]), p_letters[4]), p_letters[5])
+}
+
+check_yellowgreen <- function(df, word) {
+ 
+  df2 <- check_green(df, word)
+  
+  df3 <- df2 |> 
+    select(-g1, -g2, -g3, -g4, -g5) |> 
+    mutate(yellows = (5 - str_length(yellow_formula(df$answer, word))) - greens)
+  
+  return(df3)
+}
+
+plot_green <- function(df, word) {
+  
+  df2 <- check_yellowgreen(df, word)
+  
+  df3 <- df2 |> 
+           count(greens)
+  
+  df3 |> 
+    filter(greens != 0) |> 
+    ggplot(aes(greens, n)) +
+    geom_col(fill = "#00BA42") +
+    geom_text(aes(label = n), vjust = -1) +
+    scale_x_continuous(breaks = c(1,2,3,4,5)) +
+    labs(title = paste0("Distribution Green Letters in ", word),
+         subtitle = "Wordle Answers from September 2021 to April 2026",
+         caption = paste0("Instances of No Greens: ", sum(df2$greens == 0)))
+  
+}
+
+plot_yellow <- function(df, word) {
+  
+  df2 <- check_yellowgreen(df, word)
+  
+  df3 <- df2 |> 
+           count(yellows)
+  
+  df3 |> 
+    filter(yellows != 0) |> 
+    ggplot(aes(yellows, n)) +
+    geom_col(fill = "#FFDD33") +
+    geom_text(aes(label = n), vjust = -1) +
+    scale_x_continuous(breaks = c(1,2,3,4,5)) +
+    labs(title = paste0("Distribution of Yellow Letters in ", word),
+         subtitle = "Wordle Answers from September 2021 to April 2026",
+         caption = paste0("Instances of No Yellows: ", sum(df2$yellows == 0)))
+  
+  
+}
+
+plot_yellowgreen <- function(df, word) {
+  
+  df2 <- check_yellowgreen(df, word)
+  
+  dfg <- df2 |> 
+    count(greens) |> 
+    complete(greens = 0:5, fill = list(n = 0)) |> 
+    rename(count = greens) |> 
+    mutate(color = "greens") |> 
+    filter(count != 0)
+  
+  dfy <- df2 |> 
+    count(yellows) |> 
+    complete(yellows = 0:5, fill = list(n = 0)) |> 
+    rename(count = yellows) |> 
+    mutate(color = "yellows") |> 
+    filter(count != 0)
+  
+  df3 <- full_join(dfg, dfy)
+  
+  df3 |> 
+    ggplot(aes(count, n, fill = color)) +
+    geom_col(position = "dodge") +
+    scale_fill_manual(values = c("greens" = "#00BA42", "yellows" = "#FFDD33")) +
+    geom_text_repel(aes(label = n), 
+                    vjust = -1, 
+                    ylim = c(0, NA),
+                    position = position_dodge(width = 0.9)) +
+    #scale_color_manual(values = c("greens" = "#00BA42", "yellows" = "#FFDD33")) +
+    scale_x_continuous(breaks = c(1,2,3,4,5)) +
+    ylim(0, max(df3$n) + 100) +
+    labs(title = paste0("Distribution of Yellow and Green Letters in ", word),
+         subtitle = "Wordle Answers from September 2021 to April 2026",
+         caption = c(paste0("Instances of No Yellows: ", sum(df2$yellows == 0)),
+                     paste0("Instances of No Greens: ", sum(df2$greens == 0))),
+         x = "Number of Green or Yellows",
+         y = "") +
+    theme(legend.position = "none",
+          plot.caption = element_text(hjust = c(1, 0)))
+  
+}
+```
+
+## Input Five Letter Word
+
+```{r}
+#| panel: sidebar
+
+textInput(inputId = "word", 
+          label = "Enter a word:",
+          value = "")
+
+plotOutput("barPlot")
+tableOutput("tableRank")
+```
+
+
+```{r}
+#| context: server
+
+output$tableRank <- renderTable({
+  word <- str_to_upper(input$word)
+  wordrankings2 |> 
+    filter(guess == word)
+})
+```
+
+```{r}
+#| context: server
+
+output$barPlot <- renderPlot({
+  word <- str_to_upper(input$word)
+  plot_yellowgreen(answers1, word)
+})
+```

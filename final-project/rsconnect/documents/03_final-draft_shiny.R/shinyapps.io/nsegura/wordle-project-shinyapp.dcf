@@ -1,0 +1,13 @@
+name: wordle-project-shinyapp
+title: wordle-project-shinyapp
+username: nsegura
+account: nsegura
+server: shinyapps.io
+hostUrl: https://api.shinyapps.io/v1
+appId: 17223714
+bundleId: 11914337
+url: https://nsegura.shinyapps.io/wordle-project-shinyapp/
+version: 1
+asMultiple: FALSE
+asStatic: FALSE
+ignoredFiles: 00_get-data.R|01_data-source.html|01_data-source.qmd|02_rough-draft.html|02_rough-draft.qmd|02_rough-draft_cache/html/__packages|02_rough-draft_cache/html/unnamed-chunk-11_1f3a0a6e454872adc3fa772d17cbbc9d.RData|02_rough-draft_cache/html/unnamed-chunk-11_1f3a0a6e454872adc3fa772d17cbbc9d.rdb|02_rough-draft_cache/html/unnamed-chunk-11_1f3a0a6e454872adc3fa772d17cbbc9d.rdx|02_rough-draft_files/figure-html/unnamed-chunk-15-1.png|02_rough-draft_files/figure-html/unnamed-chunk-17-1.png|02_rough-draft_files/figure-html/unnamed-chunk-6-1.png|02_rough-draft_files/figure-html/unnamed-chunk-7-1.png|02_rough-draft_files/figure-html/unnamed-chunk-8-1.png|02_rough-draft_shiny.html|02_rough-draft_shiny.qmd|03_final-draft.html|03_final-draft.qmd|03_final-draft_cache|03_final-draft_files
